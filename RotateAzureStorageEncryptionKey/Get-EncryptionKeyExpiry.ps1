@@ -30,7 +30,7 @@ param(
  
  }
  
- Connect-AzAccount @params -ServicePrincipal
+ Connect-AzAccount @params -ServicePrincipal | Out-Null
  
  
  Write-Verbose 'Processing Parameters'
@@ -41,7 +41,7 @@ param(
  #$runasExpiration = (Get-AzADAppCredential -ApplicationId ($connection.ApplicationID)).EndDate
  
  #if ($runasExpiration -lt $dateplus30) { $runasExpiration = $true }
- if ($expiryDate -lt $dateplus30) { $keyExpiration = $true }
+ if ($expiryDate -gt $dateplus30) { $keyExpiration = $true }
  
  
  
