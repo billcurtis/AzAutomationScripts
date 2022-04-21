@@ -63,6 +63,7 @@ Write-Verbose -Message "Connecting to Azure through Managed Identity"
 Connect-AzAccount -Identity | Out-Null
 
 # Inputs
+Write-Verbose -Message "Starting Runbook: CreateAzManagedDiskFromImage"
 Write-Verbose -Message  "Inputs are: $sourceRGLocation, $sourceResourceGroupName, $targetResourceGroupName, $GalleryName, $imageVersionNumber"
 
 # Get the image infomration of what we are going to create a managed disk from.
@@ -113,3 +114,6 @@ $diskinfo = New-AzDisk @params
 
 Write-Verbose -Message "Writing disk information output to JSON"
 $diskinfo | ConvertTo-Json -Depth 100 -Compress
+
+# End Runbook
+Write-Verbose "Create-AzManagedDiskFromImage runbook has succesfully concluded its run."
