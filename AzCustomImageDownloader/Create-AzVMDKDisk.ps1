@@ -1,7 +1,5 @@
 # This is the sample coordinator runbook to create the disk image
 
-# Just set the 6 variables and the image will be created on the runbook worker that you specify. 
-
 # Set Variables - Should put this in Variables in the Automation account.
 
 $SourceResourceGroupName = 'ImageCreation-rg'
@@ -10,7 +8,6 @@ $GalleryName = 'MyIBSIG'
 $GalleryImageDefinitionName = 'win10SessionHost'
 $downloadPath = 'E:\Downloads'
 $sourceFilePath = 'E:\Downloads'
-
 
 # 1. Get the latest version of the  source image
 
@@ -22,6 +19,7 @@ $params = @{
 
 }
 
+$ErrorActionPreference = "Stop"
 
 $latestImage = (.\Get-LatestAzCustomImage.ps1 @params) | ConvertFrom-Json
 
@@ -40,6 +38,8 @@ $params = @{
 }
 
 $managedDisk = (.\Create-AzManagedDiskFromImage.ps1 @params) | ConvertFrom-Json
+
+$sourceFileName = "$($managedDisk.Name).vhd"
 
 # 3. Export the just created managed disk
 
@@ -64,14 +64,28 @@ $params = @{
 
 .\Remove-AzManagedDisk.ps1 @params
 
-# 5. Convert downloaded disk to a VMDK file.
 
-$sourceFileName = "$($managedDisk.Name).vhd"
+
+# Set the Paging File back to the C: drive
 
 $params = @{
 
     sourceFilename = $sourceFileName
     sourceFilePath = $sourceFilePath
+
+}
+
+.\Set-VHDPagingFile.ps1  @params
+
+# 6. Convert downloaded disk to a VMDK file.
+
+
+
+$params = @{
+
+    sourceFilename   = $sourceFileName
+    sourceFilePath   = $sourceFilePath
+    ConversionMethod = 'qemu'
 
 }
 
