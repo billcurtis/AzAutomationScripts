@@ -9,7 +9,7 @@
     $subscriptionId - Target Azure Subscription ID
     $virtualNetworkId - Id of the virtual network that will be evaluated
     $subnetName - The name of the subnet to scan DNS entries.
-    $targetDNS - Array of DNS addresses to set the targeted VM to use.
+    $targetDNS - JSON Array of DNS addresses to set the targeted VM to use.
         
 
     .NOTES
@@ -24,7 +24,7 @@ param (
 $subscriptionId,
 $virtualNetworkId,
 $subnetName,
-$targetDNS
+$targetDNSJSON
 
 )
 
@@ -49,7 +49,7 @@ function Get-AzNICsinSubnet {
     
     
     Write-Verbose "Target subscription ID is $subscriptionId"
-    Select-AzSubscription -SubscriptionId $subscription | Out-Null
+    Select-AzSubscription -SubscriptionId $subscriptionId | Out-Null
     
     # Select the target Virtual Network
     
@@ -189,6 +189,8 @@ Connect-AzAccount -Identity
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = 'Continue'
 
+# Convert $targetDNSJSON to array
+$targetDNS = $targetDNSJSON | ConvertFrom-JSON
 
 # Get vNICs that will need DNS to be set
 $targetNICs = Get-AzNICsinSubnet -subscriptionId $subscriptionId -virtualNetworkId $virtualNetworkId -subnetName $subnetName
