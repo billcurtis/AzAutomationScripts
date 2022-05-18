@@ -1,0 +1,206 @@
+<#
+    .DESCRIPTION
+       
+    Runbook that sets the DNS Servers for Azure NICs attached to a specified Azure Virtual Network's
+        subnet. 
+
+    .INPUTS
+       
+    $subscriptionId - Target Azure Subscription ID
+    $virtualNetworkId - Id of the virtual network that will be evaluated
+    $subnetName - The name of the subnet to scan DNS entries.
+    $targetDNS - Array of DNS addresses to set the targeted VM to use.
+        
+
+    .NOTES
+        
+    Work in progress. Need to add VM Reboot logic.
+    This runbook will replace ALL 
+
+#>
+
+param (
+
+$subscriptionId,
+$virtualNetworkId,
+$subnetName,
+$targetDNS
+
+)
+
+# Load Functions
+
+function Get-AzNICsinSubnet {
+
+    param (
+
+        [string]$subscriptionId,
+        [string]$virtualNetworkId,
+        [string]$subnetName
+
+    )
+
+    Write-Verbose -Message "Subscription ID = $subscriptionId"
+    Write-Verbose -Message "VirtualNetworkId = $virtualNetworkId"
+    Write-Verbose -Message "subnetName = $subnetName"
+
+
+    # Select Azure Subscription that contains the target Virtual Network
+    
+    
+    Write-Verbose "Target subscription ID is $subscriptionId"
+    Select-AzSubscription -SubscriptionId $subscription | Out-Null
+    
+    # Select the target Virtual Network
+    
+    Write-Verbose "Getting all Virtual Networks in subscription: $subscription"
+    $virtualNetwork = Get-AzVirtualNetwork | Where-Object { $_.Id -eq $virtualNetworkId }
+    
+  
+    if ($virtualNetwork) {
+    
+        # Get Subnet Information
+    
+        $params = @{
+    
+            Name              = $virtualNetwork.Name
+            ResourceGroupName = $virtualNetwork.ResourceGroupName
+            ExpandResource    = 'subnets/ipConfigurations' 
+    
+        }
+    
+        $vNetSubNets = (Get-AzVirtualNetwork @params) 
+    
+        # Select Subnet
+    
+        Write-Verbose "Getting target Subnet"
+        $subnet = ($vNetSubnets.Subnets | Where-Object { $_.Name -match $subnetName })
+    
+        # Get Subnet Information and create object.
+        $objSubnet = @()
+        foreach ($ipConfig in $subnet.IpConfigurations) {
+    
+            # Only list adapter if not a private endpoint
+    
+            if ($ipConfig.Name -notmatch "privateEndpointIpConfig") {
+    
+                $objSubnet += [PSCustomObject]@{
+    
+                    Device            = ($ipConfig.Id.Split('/')[8])
+                    Type              = ($ipConfig.Id.Split('/')[7])
+                    PrivateIPAddress  = $ipConfig.PrivateIPAddress
+                    Subnet            = $subnet.Name
+                    ResourceGroupName = ($ipConfig.Id.Split('/')[4])
+    
+                }
+    
+            }
+    
+        }
+    
+        $objSubnet
+
+    
+    }
+    
+}
+function Set-AzNICDNS {
+
+    param (
+
+        [string]$Device,
+        [string]$ResourceGroupName,
+        $TargetDNS
+
+    )
+
+    [bool]$reboot = $false
+    $azNIC = Get-AzNetworkInterface -ResourceGroupName $ResourceGroupName -Name $Device
+    [System.Collections.ArrayList]$TargetDNSServers = $TargetDNS
+    [System.Collections.ArrayList]$azDNSIPs = $azNIC.DnsSettings.DnsServers
+
+    # If no custom IPs, add them
+    if (!$azDNSIPs) {
+
+        foreach ($dnsIP in $TargetDNS) {
+
+            $azNIC.DnsSettings.DnsServers.Add($dnsIP) | Out-Null
+
+        }
+        
+        Write-Verbose -Message "Setting initial custom DNS on Azure NIC: $Device"
+        $azNIC | Set-AzNetworkInterface | Out-Null
+        $reboot = $true
+        $reboot
+
+    }
+
+    # Check and see if IP Addresses have already been assigned and remove if needed
+    if ($azDNSIPs) {
+
+        [System.Collections.ArrayList]$TargetDNSServers = $TargetDNS
+        [System.Collections.ArrayList]$azDNSIPs = $azNIC.DnsSettings.DnsServers
+        [bool]$dnsupdate = $false
+        foreach ($existingDNSIP in $azDNSIPs) {       
+
+            if ( $TargetDNS -contains $existingDNSIP ) {
+
+                Write-Verbose -Message  "Match found for current IP: $existingDNSIP on Azure NIC: $Device"
+                
+
+            }
+
+            else {
+                $dnsupdate = $true
+                Write-Verbose -Message  "No match found $existingDNSIP. Removing DNS Address on Azure NIC: $Device"
+                $azNIC.DnsSettings.DnsServers.Remove($existingDNSIP) | Out-Null
+
+            }
+
+        }
+
+        if ($dnsupdate) {
+
+            Write-Verbose -Message "Writing DNS servers to Azure NIC: $Device"
+            $azNIC | Set-AzNetworkInterface | Out-Null
+            $reboot = $true
+            $reboot
+
+        }
+
+    }
+  
+}
+
+#region main
+
+# Load Modules
+
+Import-Module -Name Az.Accounts
+Import-Module -Name Az.Network
+
+
+# Connect to identity
+
+Connect-AzAccount -Identity
+
+# Set Preferences
+
+$ErrorActionPreference = 'Stop'
+$VerbosePreference = 'Continue'
+
+
+# Get vNICs that will need DNS to be set
+$targetNICs = Get-AzNICsinSubnet -subscriptionId $subscriptionId -virtualNetworkId $virtualNetworkId -subnetName $subnetName
+
+# Check the NICs and make DNS updates as necessary
+
+foreach ($targetNIC in $targetNICs) {
+
+$reboot = Set-AzNICDNS -Device $targetNic.Device -ResourceGroupName $targetNIC.ResourceGroupName -TargetDNS $targetDNS
+
+}
+
+# Location to take end result and call Restart-AzureVM runbook.
+
+#endregion
