@@ -21,10 +21,10 @@
 
 param (
 
-$subscriptionId,
-$virtualNetworkId,
-$subnetName,
-$targetDNSJSON
+    $subscriptionId,
+    $virtualNetworkId,
+    $subnetName,
+    $targetDNSJSON
 
 )
 
@@ -199,7 +199,7 @@ $targetNICs = Get-AzNICsinSubnet -subscriptionId $subscriptionId -virtualNetwork
 
 foreach ($targetNIC in $targetNICs) {
 
-$reboot = Set-AzNICDNS -Device $targetNic.Device -ResourceGroupName $targetNIC.ResourceGroupName -TargetDNS $targetDNS
+    $reboot = Set-AzNICDNS -Device $targetNic.Device -ResourceGroupName $targetNIC.ResourceGroupName -TargetDNS $targetDNS
 
 }
 
