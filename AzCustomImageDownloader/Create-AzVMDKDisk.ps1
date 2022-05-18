@@ -13,9 +13,9 @@ $sourceFilePath = 'E:\Downloads'
 
 $params = @{
 
-    SourceResourceGroupName    = $SourceResourceGroupName
-    GalleryName                = $GalleryName
-    GalleryImageDefinitionName = $GalleryImageDefinitionName
+SourceResourceGroupName =  $SourceResourceGroupName
+GalleryName = $GalleryName
+GalleryImageDefinitionName = $GalleryImageDefinitionName
 
 }
 
@@ -27,17 +27,17 @@ $latestImage = (.\Get-LatestAzCustomImage.ps1 @params) | ConvertFrom-Json
 
 $params = @{
 
-    SourceRGLocation           = $latestImage.Location
-    SourceResourceGroupName    = $SourceResourceGroupName
-    TargetResourceGroupName    = $TargetResourceGroupName
-    GalleryName                = $GalleryName
-    GalleryImageDefinitionName = $GalleryImageDefinitionName
-    imageVersionNumber         = $latestImage.Name
+SourceRGLocation = $latestImage.Location
+SourceResourceGroupName =  $SourceResourceGroupName
+TargetResourceGroupName = $TargetResourceGroupName
+GalleryName = $GalleryName
+GalleryImageDefinitionName = $GalleryImageDefinitionName
+imageVersionNumber = $latestImage.Name
 
 
 }
 
-$managedDisk = (.\Create-AzManagedDiskFromImage.ps1 @params) | ConvertFrom-Json
+$managedDisk =  (.\Create-AzManagedDiskFromImage.ps1 @params) | ConvertFrom-Json
 
 $sourceFileName = "$($managedDisk.Name).vhd"
 
@@ -45,9 +45,9 @@ $sourceFileName = "$($managedDisk.Name).vhd"
 
 $params = @{
 
-    DiskName                = $managedDisk.Name
-    TargetResourceGroupName = $TargetResourceGroupName
-    downloadPath            = $downloadPath
+DiskName  =  $managedDisk.Name
+TargetResourceGroupName = $TargetResourceGroupName
+downloadPath = $downloadPath
 
 }
 
@@ -57,8 +57,8 @@ $params = @{
 
 $params = @{
 
-    DiskName                = $managedDisk.Name
-    TargetResourceGroupName = $TargetResourceGroupName
+DiskName  =  $managedDisk.Name
+TargetResourceGroupName = $TargetResourceGroupName
 
 }
 
@@ -66,29 +66,27 @@ $params = @{
 
 
 
-# Set the Paging File back to the C: drive
+# 5. Set  OS Customizations
 
 $params = @{
 
-    sourceFilename = $sourceFileName
-    sourceFilePath = $sourceFilePath
+sourceFilename   =  $sourceFileName
+sourceFilePath = $sourceFilePath
 
 }
 
-.\Set-VHDPagingFile.ps1  @params
+.\Set-OSCustomizations.ps1 @params
+
+
 
 # 6. Convert downloaded disk to a VMDK file.
 
-
-
 $params = @{
 
-    sourceFilename   = $sourceFileName
-    sourceFilePath   = $sourceFilePath
-    ConversionMethod = 'qemu'
+sourceFilename   =  $sourceFileName
+sourceFilePath = $sourceFilePath
+ConversionMethod = 'qemu'
 
 }
 
 .\ConvertTo-VMDKDisk.ps1 @params
-
-	 
