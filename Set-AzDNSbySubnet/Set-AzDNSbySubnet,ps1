@@ -182,7 +182,7 @@ Import-Module -Name Az.Network
 
 # Connect to identity
 
-Connect-AzAccount -Identity
+Connect-AzAccount -Identity | Out-Null
 
 # Set Preferences
 
@@ -190,6 +190,7 @@ $ErrorActionPreference = 'Stop'
 $VerbosePreference = 'Continue'
 
 # Convert $targetDNSJSON to array
+Write-Verbose -Message $targetDNSJSON
 $targetDNS = $targetDNSJSON | ConvertFrom-JSON
 
 # Get vNICs that will need DNS to be set

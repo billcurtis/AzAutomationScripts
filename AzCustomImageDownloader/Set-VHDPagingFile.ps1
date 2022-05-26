@@ -45,7 +45,7 @@ if (($sourceFilePath.EndsWith('\')) -eq $false) { $sourceFilePath = "$sourceFile
 
 Mount-DiskImage -ImagePath ($sourceFilePath + $sourceFileName) | Out-Null
 
-$mountedDrive = (Get-Volume | Where-Object { $_.FileSystemLabel -eq 'Windows' } | Select-Object DriveLetter).DriveLetter
+$mountedDrive = (Get-Volume | Where-Object { $_.FileSystemLabel -eq 'Windows' -and $_.DriveLetter -ne 'C' } | Select-Object DriveLetter).DriveLetter
 
 $registeryHive = $mountedDrive + ':\Windows\System32\config\System'
 
