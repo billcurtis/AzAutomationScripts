@@ -71,6 +71,11 @@ $VerbosePreference = "SilentlyContinue"
 
 $sSecret = $secret | ConvertTo-SecureString -AsPlainText -Force
 $pscredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $appID, $sSecret
+
+# Connect to destination tenant first - don't know why this is necessary, but it is.
+Connect-AzAccount -ServicePrincipal -Credential $pscredential -Tenant $destTenant
+
+# Connect to source tenant
 Connect-AzAccount -ServicePrincipal -Credential $pscredential -Tenant $srcTenant
 
 # Add the peering on Tenant01
