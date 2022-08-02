@@ -22,8 +22,7 @@
         3. The multi-tenant service principal must have Network Contributor rights to perform 
             the necessary operations in both subscription either for the targeted subscription/
             resource group/vnet resource. 
-        4. You must hardcode the SP secret, App ID, and tenant IDs in the script.  For more security
-            use the runbook version of this script.    
+        4. You must create automation credentials\variables for the SP secret, App ID, and tenant IDs.
 
 #>
 
@@ -120,15 +119,29 @@ Import-Module Az.Accounts
 Import-Module Az.Automation
 $VerbosePreference = "SilentlyContinue"
 
+# Get Subscription IDs from vnet resource ids
+
+$srcVnetSubId = (($srcVnetID.split('/'))[2])
+Write-Verbose -Message "Source Subscription ID is: $srcVnetSubId"
+$destVnetSubId = (($destVnetID.split('/'))[2])
+
+Write-Verbose -Message "Destination Subscription ID is: $destVnetSubId"
+
 # Logon to source with Service Principals
 
 # Connect to destination tenant first 
+
 Write-Verbose -Message "Connecting to Destination Tenant: $destTenant"
 Connect-AzAccount -ServicePrincipal -Credential $spCreds -Tenant $destTenant | Out-Null
 
 # Connect to source tenant
+
 Write-Verbose -Message "Connecting to Source Tenant: $srcTenant"
 Connect-AzAccount -ServicePrincipal -Credential $spCreds -Tenant $srcTenant | Out-Null
+
+# Set context to the correct subscription
+
+Set-AzContext -Subscription $srcVnetSubId | Out-Null
 
 
 # Add the peering
@@ -139,6 +152,7 @@ $srcVnet = Get-AzVirtualNetwork -Name $srcVnetName
 $destVnetName = (($destVnetID.split('/'))[8])
 
 # Set peering name
+
 $peeringName = "$($srcVnetName)_$($destVnetName)"
 
 # Check to see if peering already exists
@@ -170,6 +184,10 @@ if (!$isPeered) {
     # Logon to destination
 
     Connect-AzAccount -ServicePrincipal -Credential $spcreds -Tenant $destTenant | Out-Null
+
+    # Set context to the correct subscription
+
+    Set-AzContext -Subscription $destVnetSubId | Out-Null
 
 
     $destVnet = Get-AzVirtualNetwork -Name $destVnetName

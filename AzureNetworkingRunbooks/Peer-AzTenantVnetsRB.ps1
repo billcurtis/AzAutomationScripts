@@ -103,18 +103,33 @@ Import-Module Az.Network
 Import-Module Az.Accounts
 $VerbosePreference = "SilentlyContinue"
 
+# Get Subscription IDs from vnet resource ids
+
+$srcVnetSubId = (($srcVnetID.split('/'))[2])
+Write-Verbose -Message "Source Subscription ID is: $srcVnetSubId"
+$destVnetSubId = (($destVnetID.split('/'))[2])
+Write-Verbose -Message "Destination Subscription ID is: $destVnetSubId"
+
+
+
 # Logon to source with Service Principals
 
-# Connect to destination tenant first - don't know why this is necessary, but it is.
+# Connect to destination tenant first to cache secret
+
 Write-Verbose -Message "Connecting to Destination Tenant: $destTenant"
 Connect-AzAccount -ServicePrincipal -Credential $spCreds -Tenant $destTenant | Out-Null
 
 # Connect to source tenant
+
 Write-Verbose -Message "Connecting to Source Tenant: $srcTenant"
 Connect-AzAccount -ServicePrincipal -Credential $spCreds -Tenant $srcTenant | Out-Null
 
+# Set context to the correct subscription
+
+Set-AzContext -Subscription $srcVnetSubId | Out-Null
 
 # Add the peering
+
 Write-Verbose -Message "Adding the peering"
 $srcVnetName = (($srcVnetID.split('/'))[8])
 Write-Verbose -Message "Source Virtual Network Name is: $srcVnetName"
@@ -135,6 +150,10 @@ Add-AzVirtualNetworkPeering @params
 # Logon to destination
 
 Connect-AzAccount -ServicePrincipal -Credential $spcreds -Tenant $destTenant | Out-Null
+
+# Set context to the correct subscription
+
+Set-AzContext -Subscription $destVnetSubId | Out-Null
 
 
 $destVnet = Get-AzVirtualNetwork -Name $destVnetName
