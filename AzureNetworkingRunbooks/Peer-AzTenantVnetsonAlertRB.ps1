@@ -176,7 +176,7 @@ if (!$isPeered) {
         Name                   = $peeringName
         virtualNetwork         = $srcVnet
         RemoteVirtualNetworkId = $destVnetID
-        AllowGatewayTransit    = $true
+        UseRemoteGateways      = $true
 
     }
 
@@ -198,6 +198,7 @@ if (!$isPeered) {
         Name                   = "$($destVnetName)_$($srcVnetName)"
         virtualNetwork         = $destVnet
         RemoteVirtualNetworkId = $srcVnetID
+        AllowGatewayTransit    = $true
     
     }
 
