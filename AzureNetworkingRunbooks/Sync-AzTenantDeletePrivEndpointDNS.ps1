@@ -159,10 +159,11 @@ foreach ($DNSrecordSet in $DNSrecordSets) {
             Remove-AzPrivateDnsRecordSet -RecordSet $DNSrecordSet
 
         }
-		else { Write-Verbose -Message "Recordset was not found: $($DNSRecordSet.Id)"}
+        else { Write-Verbose -Message "Recordset was not found: $($DNSRecordSet.Id)" }
 
     }
 
 }
+
 
 
