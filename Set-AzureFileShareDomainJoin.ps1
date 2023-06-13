@@ -25,7 +25,7 @@ v1.0
        Secrets User for the Key Vault containing the domain join password, and Read for the subscription.
 
     3. The following Azure Automation variables (all strings) needs to be created and populated:
-        a. domainUserName = The domain user account that the script will use to join SA to the domain.
+        a. domainUserNameSecretVariableName  = Secret name for the secret in the keybault that has the domainusername
         b. KeyVaultName = The name of the KV hosting the domain join password
         c. KeyVaultSecretName = Then name of the secret holding the domain join password to retrieve from the KV.
         d. OuDistinguishedName = # AD OU where the Azure FS will create a computer account
@@ -55,7 +55,7 @@ param (
 # Static Variables
 
 $AutomationAccountName = "automation01-aa"   # Automation Account Name
-$domainUserNameVariableName = "domainUserName"  # Domain username (contoso\domainjoiner) that will be joining the account
+$domainUserNameSecretVariableName = "domainUserNameSecret"  # Secret name for the secret in the keyvault that has the domainusername
 $keyVaultNameVariableName = "keyVaultName" # Key vault name that you will be using
 $keyVaultSecretVariableName = "keyVaultSecretName"  # Name of secret to retrieve
 $ouDistinguishedVariableName = "OuDistinguishedName"  # AD OU where the Azure FS will create a computer account
@@ -84,16 +84,16 @@ $automationAccountRG = (Get-AzAutomationAccount | Where-Object { $_.AutomationAc
 
 # Get variable values
 
-#### get domain user name variable value
+#### get domain user secret name name variable value
 $params = @{
 
     AutomationAccountName = $automationAccountName
-    Name                  = $domainUserNameVariableName
+    Name                  = $domainUserNameSecretVariableName
     ResourceGroupName     = $automationAccountRG
 } 
 
-$domainUserName = (Get-AzAutomationVariable @params).value
-Write-Verbose -Message "Domain User Name: $domainUserName"
+$domainUserNameSecretName = (Get-AzAutomationVariable @params).value
+Write-Verbose -Message "Domain User Secret Variable Name: $domainUserNameSecretName"
 
 #### get KV identity variable value
 $params.Name = $keyVaultNameVariableName
@@ -118,8 +118,11 @@ $spnCred = Get-AutomationPSCredential -Name $storageSPNCredentialName
 $kvSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $keyVaultSecretName -AsPlainText
 $kvSecret = ConvertTo-SecureString $kvSecret -AsPlainText -Force
 
+# Get the KV Secret for the domain join username
+$kvDomainUserName = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $domainUserNameSecretName -AsPlainText
+
 # Create PowerShell Credential
-[pscredential]$creds = New-Object System.Management.Automation.PSCredential ($domainUserName, $kvSecret)
+[pscredential]$creds = New-Object System.Management.Automation.PSCredential ($kvDomainUserName, $kvSecret)
 
 # Open a local session with the domain creds and join the storage account to azure
 $VerbosePreference = 'SilentlyContinue'
