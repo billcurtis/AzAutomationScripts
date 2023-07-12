@@ -57,6 +57,10 @@ Connect-AzAccount -Identity | Out-Null
 $WebhookBody = (ConvertFrom-Json -InputObject $WebhookData.RequestBody)
 $srcVnetID = $WebhookBody.Data.Essentials.alertTargetIDs[0]
 
+# Set Source Az Context
+$srcSubscriptionID = $srcVnetID.split("/")[2]
+Set-AzContext -SubscriptionId $srcSubscriptionID
+
 # get destination tenant variable value
 
 $params = @{
