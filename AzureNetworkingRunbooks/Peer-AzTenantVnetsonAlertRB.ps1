@@ -56,9 +56,11 @@ Connect-AzAccount -Identity | Out-Null
 # Get Source Virtual Network ID from webhook data
 $WebhookBody = (ConvertFrom-Json -InputObject $WebhookData.RequestBody)
 $srcVnetID = $WebhookBody.Data.Essentials.alertTargetIDs[0]
+Write-Output $WebhookBody
 
 # Set Source Az Context
 $srcSubscriptionID = $srcVnetID.split("/")[2]
+Write-Verbose -Message "SubscriptionID = $srcSubscription"
 Set-AzContext -SubscriptionId $srcSubscriptionID
 
 # get destination tenant variable value
