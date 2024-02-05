@@ -143,6 +143,7 @@ $params = @{
     virtualNetwork         = $srcVnet
     RemoteVirtualNetworkId = $destVnetID
     UseRemoteGateways      = $true
+    AllowForwardedTraffic = $true
 
 }
 
@@ -165,6 +166,7 @@ $params = @{
     virtualNetwork         = $destVnet
     RemoteVirtualNetworkId = $srcVnetID
     AllowGatewayTransit    = $true
+
     
 }
 

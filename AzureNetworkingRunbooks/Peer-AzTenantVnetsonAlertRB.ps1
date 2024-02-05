@@ -183,7 +183,7 @@ if (!$isPeered) {
         virtualNetwork         = $srcVnet
         RemoteVirtualNetworkId = $destVnetID
         UseRemoteGateways      = $true
-
+        AllowForwardedTraffic = $true
     }
 
     Add-AzVirtualNetworkPeering @params
