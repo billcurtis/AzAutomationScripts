@@ -1,1 +1,1 @@
-sudo apt-get install -y powershell
+sudo snap install powershell --classic
