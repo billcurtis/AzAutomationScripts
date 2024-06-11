@@ -34,28 +34,10 @@ $ErrorActionPreference = "Stop"
 $VerbosePreference = "Continue"
 
 
-$connectionName = "AzureRunAsConnection"
-try {
-    # Get the connection "AzureRunAsConnection "
-    $servicePrincipalConnection = Get-AutomationConnection -Name $connectionName         
+# Connect to Azure 
+$subscriptionID =  Get-AzAutomationVariable -Name SubscriptionID
+Connect-AzAccount -Identity -Subscription $subscriptionID
 
-    Add-AzAccount `
-        -ServicePrincipal `
-        -TenantId $servicePrincipalConnection.TenantId `
-        -ApplicationId $servicePrincipalConnection.ApplicationId `
-        -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint `
-    | Out-Null
-}
-catch {
-    if (!$servicePrincipalConnection) {
-        $ErrorMessage = "Connection $connectionName not found."
-        throw $ErrorMessage
-    }
-    else {
-        Write-Error -Message $_.Exception
-        throw $_.Exception
-    }
-}
 
 # Inputs
 Write-Verbose "Inputs are ResourceGroupName = $ResourceGroupName, VMName = $VMName "
