@@ -19,9 +19,11 @@
 param (
 
     [string]$ResourceGroupName,
-    [string]$VMName
+    [string]$VMName,
+    [string]$subscriptionID
 
 )
+
 
 
 # Import Modules
@@ -35,28 +37,11 @@ $ErrorActionPreference = "Stop"
 $VerbosePreference = "Continue"
 
 
-$connectionName = "AzureRunAsConnection"
-try {
-    # Get the connection "AzureRunAsConnection "
-    $servicePrincipalConnection = Get-AutomationConnection -Name $connectionName         
 
-    Add-AzAccount `
-        -ServicePrincipal `
-        -TenantId $servicePrincipalConnection.TenantId `
-        -ApplicationId $servicePrincipalConnection.ApplicationId `
-        -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint `
-        | Out-Null
-}
-catch {
-    if (!$servicePrincipalConnection) {
-        $ErrorMessage = "Connection $connectionName not found."
-        throw $ErrorMessage
-    }
-    else {
-        Write-Error -Message $_.Exception
-        throw $_.Exception
-    }
-}
+# Connect to Azure 
+Connect-AzAccount -Identity -Subscription $subscriptionID
+
+
 
 # Inputs
 Write-Verbose "Inputs are ResourceGroupName = $ResourceGroupName, VMName = $VMName "

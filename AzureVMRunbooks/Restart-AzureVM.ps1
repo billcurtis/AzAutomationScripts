@@ -18,7 +18,8 @@
 param (
 
     [string]$ResourceGroupName,
-    [string]$VMName
+    [string]$VMName,
+    [string]$subscriptionID
 
 )
 
@@ -35,7 +36,6 @@ $VerbosePreference = "Continue"
 
 
 # Connect to Azure 
-$subscriptionID =  Get-AzAutomationVariable -Name SubscriptionID
 Connect-AzAccount -Identity -Subscription $subscriptionID
 
 
