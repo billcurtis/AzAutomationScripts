@@ -1,0 +1,299 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "numberOfVMs": {
+            "type": "int",
+            "defaultValue": 1,
+            "maxValue": 250,
+            "minValue": 1,
+            "metadata": {
+                "description": "Number of VMs to deploy"
+            }
+        },
+        "existingNumberofVMs": {
+            "type": "int",
+            "defaultValue": 0,
+            "maxValue": 5000,
+            "minValue": 0,
+            "metadata": {
+                "description": "Number of Existing VMs in the hostpool"
+            }
+        },
+        "virtualNetworkSubscriptionId": {
+            "type": "string"
+        },
+        "virtualNetworkRG": {
+            "type": "string"
+        },
+        "virtualNetworkName": {
+            "type": "string"
+        },
+        "subnetName": {
+            "type": "string"
+        },
+        "virtualMachineName": {
+            "type": "string"
+        },
+        "virtualMachineImageResourceId": {
+            "type": "string"
+        },
+        "confidentialDiskEncryptionSetId": {
+            "type": "string"
+        },
+        "virtualMachineSize": {
+            "type": "string",
+            "defaultValue": "Standard_DC2as_v5",
+            "allowedValues": [
+                "Standard_DC2as_v5",
+                "Standard_DC4as_v5",
+                "Standard_DC8as_v5",
+                "Standard_DC16as_v5",
+                "Standard_DC32as_v5",
+                "Standard_DC48as_v5",
+                "Standard_DC64as_v5",
+                "Standard_DC96as_v5",
+                "Standard_DC2ads_v5",
+                "Standard_DC4ads_v5",
+                "Standard_DC8ads_v5",
+                "Standard_DC16ads_v5",
+                "Standard_DC32ads_v5",
+                "Standard_DC48ads_v5",
+                "Standard_DC64ads_v5",
+                "Standard_DC96ads_v5"
+            ]
+        },
+        "adminUsername": {
+            "type": "string"
+        },
+        "adminPassword": {
+            "type": "secureString"
+        },
+        "hostpoolName": {
+            "type": "string"
+        },
+        "hostpoolToken": {
+            "type": "secureString"
+        },
+        "intune": {
+            "type": "bool",
+            "defaultValue": true
+        },
+        "artifactsLocation": {
+            "type": "string",
+            "defaultValue": "https://wvdportalstorageblob.blob.core.windows.net/galleryartifacts/Configuration_1.0.02698.323.zip"
+        },
+        "capacityreservationID": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "osDiskType": "StandardSSD_LRS",
+        "osDiskDeleteOption": "Detach",
+        "nicDeleteOption": "Detach",
+        "patchMode": "AutomaticByOS",
+        "aadJoin": true,
+        "enableHotpatching": false,
+        "securityType": "ConfidentialVM",
+        "aadJoinPreview": false
+    },
+    "resources": [
+        {
+            "copy": {
+                "name": "NIC-Loop",
+                "count": "[length(range(1, parameters('numberOfVMs')))]"
+            },
+            "name": "[format('{0}-nic-{1}', parameters('virtualMachineName'), add(range(1, parameters('numberOfVMs'))[copyIndex()], parameters('existingNumberofVMs')))]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2022-11-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId(parameters('virtualNetworkSubscriptionId'),parameters('virtualNetworkRG'),'Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('subnetName'))]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "copy": {
+                "name": "VM-Loop",
+                "count": "[length(range(1, parameters('numberOfVMs')))]"
+            },
+            "name": "[format('{0}-{1}', parameters('virtualMachineName'), add(range(1, parameters('numberOfVMs'))[copyIndex()], parameters('existingNumberofVMs')))]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2024-03-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "NIC-Loop"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('virtualMachineSize')]"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "name": "[format('{0}-osdisk-{1}', parameters('virtualMachineName'), add(range(1, parameters('numberOfVMs'))[copyIndex()], parameters('existingNumberofVMs')))]",
+                        "createOption": "fromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('osDiskType')]",
+                            "securityProfile": {
+                                "securityEncryptionType": "DiskWithVMGuestState",
+                                "diskEncryptionSet": {
+                                    "id": "[parameters('confidentialDiskEncryptionSetId')]"
+                                }
+                            }
+                        },
+                        "deleteOption": "[variables('osDiskDeleteOption')]"
+                    },
+                    "imageReference": {
+                        "id": "[parameters('virtualMachineImageResourceId')]"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic-{1}', parameters('virtualMachineName'), add(range(1, parameters('numberOfVMs'))[copyIndex()], parameters('existingNumberofVMs'))))]",
+                            "properties": {
+                                "deleteOption": "[variables('nicDeleteOption')]"
+                            }
+                        }
+                    ]
+                },
+                "additionalCapabilities": {
+                    "hibernationEnabled": false
+                },
+                "capacityReservation": {
+                    "capacityReservationGroup": {
+                        "id": "[parameters('capacityreservationID')]"
+                    }
+                },
+                    "osProfile": {
+                        "computerName": "[format('{0}-{1}', parameters('virtualMachineName'), add(range(1, parameters('numberOfVMs'))[copyIndex()], parameters('existingNumberofVMs')))]",
+                        "adminUsername": "[parameters('adminUsername')]",
+                        "adminPassword": "[parameters('adminPassword')]",
+                        "windowsConfiguration": {
+                            "enableAutomaticUpdates": true,
+                            "provisionVmAgent": true,
+                            "patchSettings": {
+                                "enableHotpatching": "[variables('enableHotpatching')]",
+                                "patchMode": "[variables('patchMode')]"
+                            }
+                        }
+                    },
+                    "licenseType": "Windows_Client",
+                    "securityProfile": {
+                        "securityType": "[variables('securityType')]",
+                        "uefiSettings": {
+                            "secureBootEnabled": true,
+                            "vTpmEnabled": true
+                        }
+                    }
+                },
+                "identity": {
+                    "type": "systemAssigned"
+                }
+            },
+            {
+                "type": "Microsoft.Compute/virtualMachines/extensions",
+                "apiVersion": "2018-10-01",
+                "name": "[concat(format('{0}-{1}', parameters('virtualMachineName'), add(range(1, parameters('numberOfVMs'))[copyIndex()], parameters('existingNumberofVMs'))),'/GuestAttestation')]",
+                "location": "[resourceGroup().location]",
+                "dependsOn": [
+                    "VM-Loop"
+                ],
+                "properties": {
+                    "publisher": "Microsoft.Azure.Security.WindowsAttestation",
+                    "type": "GuestAttestation",
+                    "typeHandlerVersion": "1.0",
+                    "autoUpgradeMinorVersion": true,
+                    "settings": {
+                        "AttestationConfig": {
+                            "MaaSettings": {
+                                "maaEndpoint": "",
+                                "maaTenantName": "GuestAttestation"
+                            },
+                            "AscSettings": {
+                                "ascReportingEndpoint": "",
+                                "ascReportingFrequency": ""
+                            },
+                            "useCustomToken": "false",
+                            "disableAlerts": "false"
+                        }
+                    }
+                },
+                "copy": {
+                    "name": "VM-attestation-loop",
+                    "count": "[length(range(1, parameters('numberOfVMs')))]"
+                }
+            },
+            {
+                "type": "Microsoft.Compute/virtualMachines/extensions",
+                "apiVersion": "2021-07-01",
+                "name": "[concat(format('{0}-{1}', parameters('virtualMachineName'), add(range(1, parameters('numberOfVMs'))[copyIndex()], parameters('existingNumberofVMs'))), '/Microsoft.PowerShell.DSC')]",
+                "location": "[resourceGroup().location]",
+                "dependsOn": [
+                    "VM-attestation-loop"
+                ],
+                "properties": {
+                    "publisher": "Microsoft.Powershell",
+                    "type": "DSC",
+                    "typeHandlerVersion": "2.73",
+                    "autoUpgradeMinorVersion": true,
+                    "settings": {
+                        "modulesUrl": "[parameters('artifactsLocation')]",
+                        "configurationFunction": "Configuration.ps1\\AddSessionHost",
+                        "properties": {
+                            "hostPoolName": "[parameters('hostpoolName')]",
+                            "registrationInfoTokenCredential": {
+                                "UserName": "PLACEHOLDER_DO_NOT_USE",
+                                "Password": "PrivateSettingsRef:RegistrationInfoToken"
+                            },
+                            "aadJoin": "[variables('aadJoin')]",
+                            "UseAgentDownloadEndpoint": true,
+                            "aadJoinPreview": "[variables('aadJoinPreview')]",
+                            "mdmId": "[if(parameters('intune'), '0000000a-0000-0000-c000-000000000000', '')]",
+                            "sessionHostConfigurationLastUpdateTime": ""
+                        }
+                    },
+                    "protectedSettings": {
+                        "Items": {
+                            "RegistrationInfoToken": "[parameters('hostpoolToken')]"
+                        }
+                    }
+                },
+                "copy": {
+                    "name": "VM-DSCLoop",
+                    "count": "[length(range(1, parameters('numberOfVMs')))]"
+                }
+            },
+            {
+                "copy": {
+                    "name": "AADLoginExtension-Loop",
+                    "count": "[length(range(1, parameters('numberOfVMs')))]"
+                },
+                "name": "[concat(format('{0}-{1}', parameters('virtualMachineName'), add(range(1, parameters('numberOfVMs'))[copyIndex()], parameters('existingNumberofVMs'))), '/AADLoginForWindows')]",
+                "type": "Microsoft.Compute/virtualMachines/extensions",
+                "apiVersion": "2021-07-01",
+                "location": "[resourceGroup().location]",
+                "properties": {
+                    "publisher": "Microsoft.Azure.ActiveDirectory",
+                    "type": "AADLoginForWindows",
+                    "typeHandlerVersion": "2.0",
+                    "autoUpgradeMinorVersion": true,
+                    "settings": "[if(parameters('intune'), createObject('mdmId','0000000a-0000-0000-c000-000000000000'), json('null'))]"
+                },
+                "dependsOn": [
+                    "VM-DSCLoop"
+                ]
+            }
+    ],
+    "outputs": {}
+}
