@@ -1,5 +1,5 @@
-$tenantId = "e6a08ff6-1c05-4c60-834e-320e5103581b"
-$subscriptionId = "38ea01dd-53d4-4bb4-8e96-e1c32e7fabab"
+$tenantId = ""
+$subscriptionId = ""
 
 # Log on with Automation Account Managed Identity
 Connect-AzAccount -identity -tenantid $tenantId -SubscriptionId $subscriptionId
