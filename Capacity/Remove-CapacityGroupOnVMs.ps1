@@ -17,9 +17,9 @@ subscription ID, and resource group name which are entered in the static variabl
 #>
 
 # static variables
-$subscriptionId = "c7f13507-5347-4fa3-9fa2-f6ea98f582ea"
-$resourceGroupName = "vcme-msn-dra-rg"
-$tenantId = "d1ee1acd-bc7a-4bc4-a787-938c49a83906"
+$subscriptionId = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+$resourceGroupName = "xxxxxxxxxxxxxxxxx"
+$tenantId = "xxxxxxxxxxxxxxxxxxxxx"
 
 # import the Az module
 $VerbosePreference = "SilentlyContinue"
