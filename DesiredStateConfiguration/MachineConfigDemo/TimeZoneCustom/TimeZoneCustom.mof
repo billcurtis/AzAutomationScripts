@@ -1,0 +1,35 @@
+/*
+@TargetNode='localhost'
+@GeneratedBy=wcurtis
+@GenerationDate=02/18/2025 13:47:02
+@GenerationHost=X399EX
+*/
+
+instance of DSC_TimeZone as $DSC_TimeZone1ref
+{
+ModuleName = "ComputerManagementDsc";
+ SourceInfo = "::3::5::TimeZone";
+ TimeZone = "Eastern Standard Time";
+ ModuleVersion = "10.0.0";
+ IsSingleInstance = "Yes";
+ ResourceID = "[TimeZone]TimeZoneConfig";
+ ConfigurationName = "TimeZoneCustom";
+};
+instance of OMI_ConfigurationDocument
+
+                    {
+ Version="2.0.0";
+
+                        MinimumCompatibleVersion = "1.0.0";
+
+                        CompatibleVersionAdditionalProperties= {"Omi_BaseResource:ConfigurationName"};
+
+                        Author="wcurtis";
+
+                        GenerationDate="02/18/2025 13:47:02";
+
+                        GenerationHost="X399EX";
+
+                        Name="TimeZoneCustom";
+
+                    };

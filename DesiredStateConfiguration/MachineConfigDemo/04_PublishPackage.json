@@ -1,0 +1,16 @@
+{
+    "apiVersion": "2020-06-25",
+    "type": "Microsoft.Compute/virtualMachines/providers/guestConfigurationAssignments",
+    "name": "vmms01_6d42e860/Microsoft.GuestConfiguration/TimeZoneCustom",
+    "location": "northeurope",
+    "dependsOn": [
+        "Microsoft.Compute/virtualMachines/vmms01_6d42e860"
+    ],
+    "properties": {
+        "guestConfiguration": {
+            "name": "TimeZoneCustom",
+            "contentUri": "https://testblobwcurtis.blob.core.windows.net/machineconfiguration/TimeZoneCustom.zip?sp=r&st=2025-02-18T15:30:59Z&se=2026-02-18T23:30:59Z&spr=https&sv=2022-11-02&sr=b&sig=DVAvuhq72Yx1AM5vdjjj72lDoSsoWXLwC2BYVL4Doh0%3D",
+            "assignmentType": "ApplyAndMonitor"
+        }
+    }
+}
