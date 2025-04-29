@@ -47,7 +47,7 @@
 
 .NOTES
     This script requires the Az module to be installed. You can install it by running 'Install-Module -Name Az' if it's not already installed.
-    Make sure you have the necessary permissions to create or update NSG rules in Azure.
+    Make sure the Azure Automation managed identity has the necessary permissions to create or update NSG rules in Azure.
 
 #>
 
