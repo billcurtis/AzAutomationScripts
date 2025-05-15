@@ -133,14 +133,13 @@ try {
     $rule = Get-AzNetworkSecurityRuleConfig -NetworkSecurityGroup $nsg | Where-Object { $_.Name -eq $InboundRuleName }
     if ($rule) {
 
-        Write-Verbose -Message "Updating existing NSG rule: $InboundRuleName"
+        Write-Verbose -Message "Removing existing NSG rule: $InboundRuleName"
         $nsg.SecurityRules.Remove($rule)
         $rule.SourceAddressPrefix = $ipList
         Set-AzNetworkSecurityGroup -NetworkSecurityGroup $nsg
-    }
-    else {
+    }  
 
-        Write-Verbose -Message "Creating new NSG rule as it does not exist: $InboundRuleName"
+        Write-Verbose -Message "Creating new NSG rule: $InboundRuleName"
 
         $params = @{
             Name                     = $InboundRuleName   
@@ -158,7 +157,7 @@ try {
         $nsg.SecurityRules.Add($rule)
         Set-AzNetworkSecurityGroup -NetworkSecurityGroup $nsg -Verbose
 
-    }
+ 
 }
 catch {
     Write-Error -Message $_.Exception
