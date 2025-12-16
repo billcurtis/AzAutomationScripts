@@ -44,7 +44,10 @@ param(
     [string]$AutomationAccountResGroupName = "automation-eus2-rg",
     
     [Parameter(Mandatory = $false)]
-    [string]$PolicyDefinitionName = "Restrict-VM-Creation-by-Name"
+    [string]$PolicyDefinitionName = "Restrict-VM-Creation-by-Name",
+    
+    [Parameter(Mandatory = $false)]
+    [string]$PolicyDisplayName = "Restrict VM Creation to Approved Names"
 )
 
 #region Functions
@@ -129,7 +132,7 @@ function Get-VMsFromManagementGroups {
                 }
             }
             else {
-                Write-Verbose "  No subscriptions found in management group: $mgId"
+                Write-Verbose "No subscriptions found in management group: $mgId"
             }
         }
         
@@ -446,7 +449,10 @@ function Set-VMCreationPolicyAssignment {
         [array]$ManagementGroupIds,
         
         [Parameter(Mandatory = $true)]
-        [array]$ApprovedVMNames
+        [array]$ApprovedVMNames,
+        
+        [Parameter(Mandatory = $false)]
+        [string]$PolicyDisplayName = "Restrict VM Creation to Approved Names"
     )
     
     try {
@@ -476,7 +482,7 @@ function Set-VMCreationPolicyAssignment {
                 Write-Verbose "  Policy assignment already exists, updating..."
                 
                 $assignment = Set-AzPolicyAssignment -Id $existingAssignment.ResourceId `
-                    -DisplayName "Restrict VM Creation to Approved Names - $mgId" `
+                    -DisplayName "$PolicyDisplayName - $mgId" `
                     -PolicyParameterObject $policyParameters `
                     -ErrorAction Stop
                 
@@ -489,7 +495,7 @@ function Set-VMCreationPolicyAssignment {
                 $policyDef = Get-AzPolicyDefinition -Id $PolicyDefinitionId -ErrorAction Stop
                 
                 $assignment = New-AzPolicyAssignment -Name $assignmentName `
-                    -DisplayName "Restrict VM Creation to Approved Names - $mgId" `
+                    -DisplayName "$PolicyDisplayName - $mgId" `
                     -Description "Restricts VM creation to approved names at the management group level" `
                     -Scope $scope `
                     -PolicyDefinition $policyDef `
@@ -656,7 +662,8 @@ try {
     Set-VMCreationPolicyAssignment `
         -PolicyDefinitionId $policyDefinition.ResourceId `
         -ManagementGroupIds $managementGroups `
-        -ApprovedVMNames $approvedVMNames
+        -ApprovedVMNames $approvedVMNames `
+        -PolicyDisplayName $PolicyDisplayName
     
     Write-Output "✓ Policy assignments completed"
     Write-Output ""
